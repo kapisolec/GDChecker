@@ -1,10 +1,10 @@
-# @unknown/no-name-project
+# @GDChecker
 
-- no description
+- App used to partially decompile ethereum contracts in order to fetch liquidity method ID and antibot measures.
 
 ## Required
 
-- Node.js 14+
+- Node.js 16+
 
 ## How to using
 
