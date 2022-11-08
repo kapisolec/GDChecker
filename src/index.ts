@@ -1,10 +1,5 @@
-#!/usr/bin/env node
+const App = require("./app")
 
-const helloWorld = (): boolean => {
-  console.log('Hello World!');
-  return true;
-};
+const app = new App()
 
-helloWorld();
-
-export { helloWorld };
+app.run()
