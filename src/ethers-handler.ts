@@ -22,6 +22,7 @@ module.exports = class EthersHandler {
       "uint256[]": [1,2,3],
       "uint256[2]": [1,2],
       uint256: 1,
+      uint64:1,
       bytes32: "34523452345246",
       bool: false,
       int256: 1
