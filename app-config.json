@@ -1,7 +1,7 @@
 {
     "fetchRecords": false,
     "fetchRecordsWhenRun": true,
-    "fetchUrl": "https://www.4byte.directory/api/v1/signatures/?format=json&page=8126",
+    "fetchUrl": "https://www.4byte.directory/api/v1/signatures/?format=json&page=50",
     "updateDataWhenFetch": true,
     "useMongo": true,
     "mongoUrl": "mongodb://localhost:27017",

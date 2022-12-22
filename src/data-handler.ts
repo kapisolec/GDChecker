@@ -45,14 +45,15 @@ module.exports = class DataHandler {
     let nextUrl: string | null = url;
     let data = [];
     while(nextUrl) {
-      const fetched = await axios.get(nextUrl);
-      nextUrl = fetched.data?.next || null;
-      const newData = fetched.data.results || [];
-      data = data.concat(newData);
-      console.log("records fetched:", data.length)
-
-      await sleep(10000)
-
+      try {
+        const fetched = await axios.get(nextUrl);
+        nextUrl = fetched.data?.next || null;
+        const newData = fetched.data.results || [];
+        data = data.concat(newData);
+        console.log("records fetched:", data.length)
+      } catch(e) {
+        await sleep(30000)
+      }
       // if(data.length > 2000) break; //dev
     }
   
