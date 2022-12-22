@@ -1,0 +1,12 @@
+{
+    "fetchRecords": false,
+    "fetchUrl": "https://www.4byte.directory/api/v1/signatures/?format=json&page=8126",
+    "updateDataWhenFetch": true,
+    "useMongo": true,
+    "mongoUrl": "mongodb://localhost:27017",
+    "mongoDBName": "GDChecker",
+    "mongoSignsColName": "signatures",
+    "ethersProviderUrl": "https://mainnet.infura.io/v3/7f9dea2abb3b4831beaad7e85fe9ac75",
+    "testWallet": "0xf9B146E9fb8e979b2be03d57CD5c00375Cf01059",
+    "expressPort": 3000
+}
