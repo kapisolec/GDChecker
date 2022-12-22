@@ -16,7 +16,10 @@ module.exports = class ApiHandler {
     this.ethersHandler = new EthersHandler()
   }
 
-  public configureApp() {
+  public async configureApp() {
+    if (this.config.fetchRecordsWhenRun) {
+      await this.dataHandler.fetchData(this.config.fetchUrl, true)
+    }
     this.expressApp.get('/',(_,res)=>{
       res.send("<h1>chuj</h1>")
     })

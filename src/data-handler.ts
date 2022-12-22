@@ -1,4 +1,5 @@
 const getConfig = require('./utils/getConfig');
+const sleep = require('./utils/sleep');
 
 const axios = require('axios')
 const fs2 = require('fs')
@@ -38,7 +39,7 @@ module.exports = class DataHandler {
     return data
   }
 
-  private async fetchData(url: string) {
+  private async fetchData(url: string, updateDB:boolean = false) {
     const config = getConfig()
   
     let nextUrl: string | null = url;
@@ -50,10 +51,12 @@ module.exports = class DataHandler {
       data = data.concat(newData);
       console.log("records fetched:", data.length)
 
-      if(data.length > 2000) break; //dev
+      await sleep(10000)
+
+      // if(data.length > 2000) break; //dev
     }
   
-    if(data && config.updateDataWhenFetch) {
+    if(updateDB || (data && config.updateDataWhenFetch)) {
       await this.updateStaticData(data)
     }
   
