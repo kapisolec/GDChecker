@@ -1,13 +1,9 @@
-const getConfig2 = require('./utils/getConfig')
+import ethers from "ethers"
 
-const ethers = require('ethers')
-
-module.exports = class EthersHandler {
-  readonly config: any; //TODO: types
-  provider: InstanceType<typeof ethers.providers.JsonRpcProvider>;
+export default class EthersHandler {
+  provider: ethers.providers.JsonRpcProvider
   constructor() {
-    this.config = getConfig2()
-    this.provider = new ethers.providers.JsonRpcProvider(this.config.ethersProviderUrl)
+    this.provider = new ethers.providers.JsonRpcProvider(process.env.PROVIDER_URL)
   }
 
   public parseTextSignature(textSignature) {
@@ -18,11 +14,11 @@ module.exports = class EthersHandler {
 
     const argumentOptions = {
       string: "test",
-      address: this.config.testWallet,
-      "uint256[]": [1,2,3],
-      "uint256[2]": [1,2],
+      address: process.env.WALLET,
+      "uint256[]": [1, 2, 3],
+      "uint256[2]": [1, 2],
       uint256: 1,
-      uint64:1,
+      uint64: 1,
       bytes32: "34523452345246",
       bool: false,
       int256: 1
@@ -30,20 +26,20 @@ module.exports = class EthersHandler {
 
     let currentArgument = ''
     let argumentsStarted = false
-    for(const itr of textSignature) {
-      if(itr === " " || itr === ".") continue;
-      if(itr === "("){
+    for (const itr of textSignature) {
+      if (itr === " " || itr === ".") continue;
+      if (itr === "(") {
         argumentsStarted = true;
         continue
-      } 
-      if(itr === ")") {
+      }
+      if (itr === ")") {
         functionArgumentTypes.push(currentArgument)
         functionArguments.push(argumentOptions[currentArgument])
         break;
       }
-      
-      if(argumentsStarted) {
-        if(itr === ",") {
+
+      if (argumentsStarted) {
+        if (itr === ",") {
           functionArgumentTypes.push(currentArgument)
           functionArguments.push(argumentOptions[currentArgument])
           currentArgument = ""
@@ -54,9 +50,9 @@ module.exports = class EthersHandler {
       }
       functionName += itr
     }
-    const ERC20_ABI = `function ${functionName}(${functionArgumentTypes.reduce((prev,cur) => {
+    const ERC20_ABI = `function ${functionName}(${functionArgumentTypes.reduce((prev, cur) => {
       return prev === "" ? cur : prev + "," + cur
-    },"")})`
+    }, "")})`
     return {
       functionName,
       functionArguments,
@@ -64,19 +60,20 @@ module.exports = class EthersHandler {
     }
   }
 
-  public async getUsedSignatures(contractAddress, signaturesData) {
+  async simulateSignatures(address: string, signatures): Promise<string[]> {
     const usedFunctions: string[] = [];
-    for(const item of signaturesData) {
-      const { functionName, functionArguments, ERC20_ABI } = this.parseTextSignature(item.text_signature)
-      const contract = new ethers.Contract(contractAddress,[
+
+    for (const signature of signatures) {
+      const { functionName, functionArguments, ERC20_ABI } = this.parseTextSignature(signature.text_signature)
+      const contract = new ethers.Contract(address, [
         ERC20_ABI
-      ],this.provider)
+      ], this.provider)
       try {
         await contract.callStatic[functionName](...functionArguments)
+        usedFunctions.push(functionName)
       } catch (e) {
         continue
       }
-      usedFunctions.push(functionName)
     }
     return usedFunctions
   }
