@@ -7,6 +7,9 @@ function getTime(): string {
 }
 
 export default function serverLog(message: string) {
+  if (process.env.VERBOSE !== "1") {
+    return;
+  }
   console.log(
     `[${getTime()}]: ${message}`
   );

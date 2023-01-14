@@ -37,21 +37,36 @@ app.get('/checker-api', async (req, res) => {
   }
   serverLog(`Request received: ${address}`)
 
-  console.time('Signatures fetched')
-  const signatures = await mongoHandler.collection.find().toArray();
-  console.timeEnd('Signatures fetched')
+  console.time('Signatures simulated')
+  res.status(200).send(await ethersHandler.simulateSignatures(address as string, mongoHandler.signatures))
+  console.timeEnd('Signatures simulated')
 
-  res.status(200).send(await ethersHandler.simulateSignatures(address, signatures))
+})
+
+app.get('/get-method', async (req, res) => {
+  const id = req.query.method_id
+  if (typeof id !== "string") {
+    serverLog('Invalid query string parameter: method_id');
+    res.status(404).send('Invalid query string parameter: addresss')
+  }
+  try {
+    res.send(await mongoHandler.collection.find({
+      hex_signature: id
+    }).toArra())
+  } catch (e) {
+    serverLog(e as string)
+    res.status(500).send();
+  }
 })
 
 async function run() {
   if (!await mongoHandler.connect()) {
     process.exit();
   }
+  await mongoHandler.fetchSignatures();
+  app.listen(port, async () => {
+    serverLog("Server listening on port " + port)
+  })
 }
-
-app.listen(port, async () => {
-  console.log("Server listening on port " + port)
-})
 
 run();

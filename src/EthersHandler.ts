@@ -1,9 +1,12 @@
-import ethers from "ethers"
+import { ethers } from "ethers"
+import serverLog from "./utils/serverLog"
 
 export default class EthersHandler {
   provider: ethers.providers.JsonRpcProvider
+  signer: any
   constructor() {
     this.provider = new ethers.providers.JsonRpcProvider(process.env.PROVIDER_URL)
+    this.signer = new ethers.Wallet(process.env.PRIVATE_KEY || "", this.provider)
   }
 
   public parseTextSignature(textSignature) {
@@ -67,11 +70,16 @@ export default class EthersHandler {
       const { functionName, functionArguments, ERC20_ABI } = this.parseTextSignature(signature.text_signature)
       const contract = new ethers.Contract(address, [
         ERC20_ABI
-      ], this.provider)
+      ], this.signer)
+
       try {
         await contract.callStatic[functionName](...functionArguments)
-        usedFunctions.push(functionName)
+        serverLog(`${signature.hex_signature} - ${signature.text_signature} found for ${address}`)
+        usedFunctions.push(signature.text_signature)
       } catch (e) {
+        if (signature.hex_signature === "0x7571336a") {
+          console.log(e)
+        }
         continue
       }
     }
