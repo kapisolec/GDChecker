@@ -37,7 +37,7 @@ export default class EthersHandler {
   }
 
   constructor(mongoHandler: MongoHandler) {
-    this.provider = new ethers.providers.JsonRpcProvider(process.env.PROVIDER_URL || "")
+    this.provider = new ethers.providers.WebSocketProvider(process.env.PROVIDER_URL || "")
     this.mongoHandler = mongoHandler
     this.mockValues.bytes = ethers.utils.randomBytes(1);
   }
@@ -45,7 +45,7 @@ export default class EthersHandler {
   private generateValues(inputs: ethers.utils.ParamType[]): [] {
     const values: any = [];
     const stack = [...inputs]
-    console.log(inputs)
+    // console.log(inputs)
     while (stack.length > 0) {
       const input = stack.shift() as ethers.utils.ParamType;
       const inputType = input.type.replace(/\d/g, '');
@@ -74,15 +74,16 @@ export default class EthersHandler {
       }
     }
 
-    console.log(values)
+    // console.log(values)
     return values;
   }
 
   async simulateSignatures(address: string): Promise<string[]> {
     const usedFunctions: string[] = [];
-    let signatureCursor = await this.mongoHandler.collection.find();
+    const signatureCursor = await this.mongoHandler.collection.find();
 
     while (await signatureCursor.hasNext()) {
+      // console.time("iteration")
       const signature = await signatureCursor.next();
       const abi = `function ${signature.text_signature}`;
       const fragment = ethers.utils.Fragment.from(abi)
@@ -92,14 +93,16 @@ export default class EthersHandler {
       try {
         await contract.callStatic[fragment.name](...values)
         serverLog(`${signature.hex_signature} - ${signature.text_signature} found for ${address}`)
-        usedFunctions.push(signature.hex_signature)
+        // console.log(values)
+        usedFunctions.push(signature.text_signature)
       } catch (e) {
-        if ((e as any).code !== ethers.utils.Logger.errors.NETWORK_ERROR) {
+        if ((e as any).code === ethers.utils.Logger.errors.NETWORK_ERROR) {
           console.log(signature.text_signature)
           console.log(values)
           console.log(e)
         }
       }
+      // console.timeEnd("iteration")
     }
     //   const abi = `function ${signature.text_signature}`;
     //   const fragment = ethers.utils.Fragment.from(abi)

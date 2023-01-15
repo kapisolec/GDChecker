@@ -5,7 +5,6 @@ export default class MongoHandler {
   mongoClient: mongodb.MongoClient;
   db: any;
   collection: any;
-  signatures: any[] = []
 
   constructor() {
     this.mongoClient = new mongodb.MongoClient(process.env.MONGO_URL || "")
@@ -23,15 +22,15 @@ export default class MongoHandler {
     }
   }
 
-  async fetchSignatures() {
-    serverLog('Fetching signatures...')
-    try {
-      this.signatures = await this.collection.find().toArray()
-      serverLog('Signatures fetched.')
-      return true;
-    } catch (e) {
-      serverLog(e as string)
-      return false;
-    }
-  }
+  // async fetchSignatures() {
+  //   serverLog('Fetching signatures...')
+  //   try {
+  //     this.signatures = await this.collection.find().toArray()
+  //     serverLog('Signatures fetched.')
+  //     return true;
+  //   } catch (e) {
+  //     serverLog(e as string)
+  //     return false;
+  //   }
+  // }
 }
