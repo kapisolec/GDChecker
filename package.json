@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@lycolia/eslint-config": "^0.1.1",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.1",
     "@swc/cli": "^0.1.51",
     "@swc/core": "^1.2.108",
     "@swc/jest": "^0.2.5",
@@ -37,6 +38,7 @@
     "eslint": "^8.2.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jest": "^25.2.2",
+    "hardhat": "^2.12.6",
     "jest": "^27.5.1",
     "jest-watch-typeahead": "^1.0.0",
     "nodemon": "^2.0.19",

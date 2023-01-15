@@ -84,12 +84,15 @@ export default class EthersHandler {
 
     while (await signatureCursor.hasNext()) {
       // console.time("iteration")
+      console.time('dupa')
       const signature = await signatureCursor.next();
       const abi = `function ${signature.text_signature}`;
       const fragment = ethers.utils.Fragment.from(abi)
       const contract = new ethers.Contract(address, [abi], this.provider)
       const values = this.generateValues(fragment.inputs);
+      console.timeEnd('dupa')
 
+      console.time('cyce')
       try {
         await contract.callStatic[fragment.name](...values)
         serverLog(`${signature.hex_signature} - ${signature.text_signature} found for ${address}`)
@@ -102,6 +105,8 @@ export default class EthersHandler {
           console.log(e)
         }
       }
+      console.timeEnd('cyce')
+
       // console.timeEnd("iteration")
     }
     //   const abi = `function ${signature.text_signature}`;
