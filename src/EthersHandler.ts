@@ -1,88 +1,133 @@
 import { ethers } from "ethers"
 import serverLog from "./utils/serverLog"
+import MongoHandler from "./MongoHandler"
+import { throws } from "assert";
+import { cursorTo } from "readline";
+import { sign } from "crypto";
+
+const maxArraySize = 100;
+const blacklist = [
+  'test(address[][][4][4][][][45678],uint256[][][][][][][][][][][][][][][][][][][][][][6][9])',
+  'test(address[][][4][4][][][45678])'
+]
 
 export default class EthersHandler {
   provider: ethers.providers.JsonRpcProvider
-  signer: any
-  constructor() {
-    this.provider = new ethers.providers.JsonRpcProvider(process.env.PROVIDER_URL)
-    this.signer = new ethers.Wallet(process.env.PRIVATE_KEY || "", this.provider)
+  mongoHandler: MongoHandler;
+  private mockValues = {
+    string: "test",
+    address: '0x000000000000000000000000000000000000dead',
+    uint: 1,
+    int: 1,
+    bytes: [] as any,
+    uint256: 1,
+    uint128: 1,
+    uint48: 1,
+    uint12: 1,
+    uint64: 1,
+    uint32: 1,
+    uint16: 1,
+    uint8: 1,
+    bytes32: "0x6d6168616d000000000000000000000000000000000000000000000000000000",
+    bytes24: "",
+    bytes4: "",
+    bytes1: "",
+    bool: false,
+    int256: 1
   }
 
-  public parseTextSignature(textSignature) {
-    let functionName = '';
-    const functionArguments: string[] = []
+  constructor(mongoHandler: MongoHandler) {
+    this.provider = new ethers.providers.JsonRpcProvider(process.env.PROVIDER_URL || "")
+    this.mongoHandler = mongoHandler
+    this.mockValues.bytes = ethers.utils.randomBytes(1);
+  }
 
-    const functionArgumentTypes: string[] = []
+  private generateValues(inputs: ethers.utils.ParamType[]): [] {
+    const values: any = [];
+    const stack = [...inputs]
+    console.log(inputs)
+    while (stack.length > 0) {
+      const input = stack.shift() as ethers.utils.ParamType;
+      const inputType = input.type.replace(/\d/g, '');
+      let value;
 
-    const argumentOptions = {
-      string: "test",
-      address: process.env.WALLET,
-      "uint256[]": [1, 2, 3],
-      "uint256[2]": [1, 2],
-      uint256: 1,
-      uint64: 1,
-      bytes32: "34523452345246",
-      bool: false,
-      int256: 1
-    }
-
-    let currentArgument = ''
-    let argumentsStarted = false
-    for (const itr of textSignature) {
-      if (itr === " " || itr === ".") continue;
-      if (itr === "(") {
-        argumentsStarted = true;
-        continue
-      }
-      if (itr === ")") {
-        functionArgumentTypes.push(currentArgument)
-        functionArguments.push(argumentOptions[currentArgument])
-        break;
+      if (inputType === 'bytes') {
+        const typeLength = /\d+/.exec(input.type) === null ? '1' : /\d+/.exec(input.type)![0]
+        value = ethers.utils.randomBytes(parseInt(typeLength))
+      } else {
+        value = this.mockValues[inputType]
       }
 
-      if (argumentsStarted) {
-        if (itr === ",") {
-          functionArgumentTypes.push(currentArgument)
-          functionArguments.push(argumentOptions[currentArgument])
-          currentArgument = ""
-          continue
+      if (value === undefined) {
+        if (input.arrayLength !== null && maxArraySize > input.arrayLength) {
+          const iterations = input.arrayLength === -1 ? 1 : input.arrayLength;
+          stack.push(...Array(iterations).fill(input.arrayChildren))
+          continue;
         }
-        currentArgument += itr
-        continue
+        if (input.components !== null) {
+          stack.push(...input.components)
+          continue;
+        }
+        // serverLog(`Unsupported type: ${input.type}`)
+      } else {
+        values.push(value);
       }
-      functionName += itr
     }
-    const ERC20_ABI = `function ${functionName}(${functionArgumentTypes.reduce((prev, cur) => {
-      return prev === "" ? cur : prev + "," + cur
-    }, "")})`
-    return {
-      functionName,
-      functionArguments,
-      ERC20_ABI
-    }
+
+    console.log(values)
+    return values;
   }
 
-  async simulateSignatures(address: string, signatures): Promise<string[]> {
+  async simulateSignatures(address: string): Promise<string[]> {
     const usedFunctions: string[] = [];
+    let signatureCursor = await this.mongoHandler.collection.find();
 
-    for (const signature of signatures) {
-      const { functionName, functionArguments, ERC20_ABI } = this.parseTextSignature(signature.text_signature)
-      const contract = new ethers.Contract(address, [
-        ERC20_ABI
-      ], this.signer)
+    while (await signatureCursor.hasNext()) {
+      const signature = await signatureCursor.next();
+      const abi = `function ${signature.text_signature}`;
+      const fragment = ethers.utils.Fragment.from(abi)
+      const contract = new ethers.Contract(address, [abi], this.provider)
+      const values = this.generateValues(fragment.inputs);
 
       try {
-        await contract.callStatic[functionName](...functionArguments)
+        await contract.callStatic[fragment.name](...values)
         serverLog(`${signature.hex_signature} - ${signature.text_signature} found for ${address}`)
-        usedFunctions.push(signature.text_signature)
+        usedFunctions.push(signature.hex_signature)
       } catch (e) {
-        if (signature.hex_signature === "0x7571336a") {
+        if ((e as any).code !== ethers.utils.Logger.errors.NETWORK_ERROR) {
+          console.log(signature.text_signature)
+          console.log(values)
           console.log(e)
         }
-        continue
       }
     }
+    //   const abi = `function ${signature.text_signature}`;
+    //   const fragment = ethers.utils.Fragment.from(abi)
+    //   const contract = new ethers.Contract(address, [abi], this.provider)
+    //   console.log(signature.text_signature)
+    //   const values = this.generateValues(fragment.inputs);
+    // console.log(values)
+    // if (fragment.inputs.some(input => {
+    //   input.baseType === 'tuple' || input.baseType === 'array'
+    // })) {
+    //   console.log(abi)
+    //   console.log(values)
+    // }
+
+    //   continue;
+    //   try {
+    // await contract.callStatic[fragment.name](...values)
+    //     serverLog(`${signature.hex_signature} - ${signature.text_signature} found for ${address}`)
+    //     usedFunctions.push(signature.text_signature)
+    //   } catch (e) {
+    //     if ((e as any).code !== ethers.utils.Logger.errors.NETWORK_ERROR) {
+    //       console.log(signature.text_signature)
+    //       console.log(result)
+    //       console.log(e)
+    //     }
+    //     continue
+    //   }
+    // }
     return usedFunctions
   }
 }

@@ -10,7 +10,7 @@ dotenv.config()
 const app = express()
 const port = process.env.API_PORT;
 const mongoHandler = new MongoHandler();
-const ethersHandler = new EthersHandler();
+const ethersHandler = new EthersHandler(mongoHandler);
 
 app.use(cors({
   origin: '*',
@@ -38,7 +38,7 @@ app.get('/checker-api', async (req, res) => {
   serverLog(`Request received: ${address}`)
 
   console.time('Signatures simulated')
-  res.status(200).send(await ethersHandler.simulateSignatures(address as string, mongoHandler.signatures))
+  res.status(200).send(await ethersHandler.simulateSignatures(address as string))
   console.timeEnd('Signatures simulated')
 
 })
@@ -63,7 +63,6 @@ async function run() {
   if (!await mongoHandler.connect()) {
     process.exit();
   }
-  await mongoHandler.fetchSignatures();
   app.listen(port, async () => {
     serverLog("Server listening on port " + port)
   })
