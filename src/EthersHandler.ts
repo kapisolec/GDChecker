@@ -59,7 +59,7 @@ export default class EthersHandler {
           values.push([...this.generateValues(input.components)])
           continue;
         }
-        // serverLog(`Unsupported type: ${input.type}`)
+        serverLog(`Unsupported type: ${input.type}`)
       } else {
         values.push(value)
       }
@@ -118,7 +118,6 @@ export default class EthersHandler {
       const abi = `function ${signature.text_signature}`;
       const fragment = ethers.utils.Fragment.from(abi)
       const contract = new ethers.Contract(address, [abi], this.provider)
-      console.log(signature.text_signature)
       const values = this.generateValues(fragment.inputs);
 
       try {
