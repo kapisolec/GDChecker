@@ -47,6 +47,7 @@
   },
   "keywords": [],
   "dependencies": {
+    "@ethersproject/asm": "^5.7.0",
     "@prisma/client": "^4.8.1",
     "@types/express": "^4.17.15",
     "@types/mongodb": "^4.0.7",

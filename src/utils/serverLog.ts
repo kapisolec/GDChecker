@@ -1,4 +1,4 @@
-function getTime(): string {
+export function getTime(): string {
   const padDigits = (num: number) => String(num).padStart(2, "0");
   const date = new Date();
   return `${padDigits(date.getHours())}:${padDigits(date.getMinutes())}:${padDigits(
