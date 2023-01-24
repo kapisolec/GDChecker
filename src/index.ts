@@ -5,7 +5,6 @@ import MongoHandler from './MongoHandler';
 import EthersHandler from './EthersHandler';
 import serverLog from './utils/serverLog';
 import { ethers } from 'ethers';
-import { disassemble, Opcode } from '@ethersproject/asm';
 
 dotenv.config();
 
@@ -24,30 +23,36 @@ app.use(
 
 app.get('/:id', async (req, res) => {
   const id = req.params.id;
-  console.log(id);
-  if (!ethers.utils.isAddress(id)) return res.status(404).send('Invalid query string parameter id');
-  console.time('cyce');
-  const result = await ethersHandler.provider.getCode(id);
-  const ids = [
-    ...new Set(
-      disassemble(result)
-        .filter((obj) => obj.opcode.mnemonic === 'PUSH4')
-        .map((obj) => obj.pushValue)
-    ),
-  ];
-
-  const translated = ids.map(async (id) => {
-    console.log(id);
+  serverLog(`Decompiling ${id}...`)
+  if (!ethers.utils.isAddress(id)) {
+    return res.status(404).send('Invalid query string parameter id');
+  }
+  const functionSignatures = await ethersHandler.getFunctionSignatures(id)
+  const functionSignaturesData = functionSignatures.map(async (id) => {
     return await mongoHandler.collection
       .find({
         hex_signature: id,
       })
       .toArray();
   });
-  const promises = (await Promise.allSettled(translated)).map((promise) => (promise as any).value);
-  console.log(promises);
-  console.timeEnd('cyce');
-  res.send(promises);
+
+  const uniqueSignatures = (await Promise.allSettled(functionSignaturesData))
+    .map((promise) => (promise as any).value)
+    .map((values) => {
+      if (values.length > 1) {
+        const minId = Math.min(...values.map(value => value.id))
+        return values.find(value => value.id === minId)
+      }
+      return values[0]
+    })
+    .filter(value => value !== undefined && !ethersHandler.ignoreList.includes(value.text_signature))
+
+  const response = {};
+  uniqueSignatures.forEach(sig => {
+    response[sig.hex_signature] = sig.text_signature
+  })
+  serverLog(`${id} decompiled.`)
+  res.send(response);
 });
 
 app.get('/checker-api', async (req, res) => {

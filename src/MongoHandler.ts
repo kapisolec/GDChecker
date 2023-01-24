@@ -21,16 +21,4 @@ export default class MongoHandler {
       return false;
     }
   }
-
-  // async fetchSignatures() {
-  //   serverLog('Fetching signatures...')
-  //   try {
-  //     this.signatures = await this.collection.find().toArray()
-  //     serverLog('Signatures fetched.')
-  //     return true;
-  //   } catch (e) {
-  //     serverLog(e as string)
-  //     return false;
-  //   }
-  // }
 }
