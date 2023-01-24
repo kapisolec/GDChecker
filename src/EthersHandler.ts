@@ -6,7 +6,6 @@ import { disassemble } from '@ethersproject/asm';
 const maxArraySize = 100;
 const toTest = ['0x6e4ee811', '0x2e5b4c43', '0x9dc29fac', '0xa6f9dae1', '0xa9059cbb', '0x23b872dd', '0x269e197f', '0x2f878588', '0x33cd5ebd']
 export default class EthersHandler {
-  ignoreList = ['Panic(uint256)', 'WETH()']
   provider: ethers.providers.JsonRpcProvider
   mongoHandler: MongoHandler;
   private mockValues = {

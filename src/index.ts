@@ -45,7 +45,7 @@ app.get('/:id', async (req, res) => {
       }
       return values[0]
     })
-    .filter(value => value !== undefined && !ethersHandler.ignoreList.includes(value.text_signature))
+    .filter(value => value !== undefined)
 
   const response = {};
   uniqueSignatures.forEach(sig => {
