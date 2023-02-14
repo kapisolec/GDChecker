@@ -55,12 +55,11 @@ module.exports = class DataHandler {
   private async fetchData(url: string, updateDB: boolean = false) {
     const config = getConfig();
 
-    let nextUrl: string | null = url;
     let data = [];
-    while (nextUrl) {
+    while (url) {
       try {
-        const fetched = await axios.get(nextUrl);
-        nextUrl = fetched.data?.next || null;
+        const fetched = await axios.get(url);
+        url = fetched.data?.next || null;
         const newData = fetched.data.results || [];
         data = data.concat(newData);
         console.log('records fetched:', data.length);
@@ -92,9 +91,7 @@ module.exports = class DataHandler {
 
   public async getMethodName(methodId: string) {
     try {
-      const data = await this.collection
-        .find({ hex_signature: methodId })
-        .toArray();
+      const data = await this.collection.find({ hex_signature: methodId }).toArray();
       return data;
     } catch (error) {
       console.log('error', error);
