@@ -28,6 +28,9 @@ app.get('/:id', async (req, res) => {
     return res.status(404).send('Invalid query string parameter id');
   }
   const functionSignatures = await ethersHandler.getFunctionSignatures(id);
+
+  const checksum = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(functionSignatures.join(''))).slice(0, 18);
+  console.log({ checksum })
   const functionSignaturesData = functionSignatures.map(async (id) => {
     return await mongoHandler.collection
       .find({
@@ -68,6 +71,10 @@ app.get('/:id', async (req, res) => {
     }
   });
 
+
+  // filter out the functions that are not in the uniqueSignatures array
+  const unknownFunctions = functionSignatures.filter((id) => !uniqueSignatures.find((sig) => sig.hex_signature === id));
+
   // todo
   // const fees = await ethersHandler.simulateFees(id, possiblyFeeFunctions);
 
@@ -78,6 +85,8 @@ app.get('/:id', async (req, res) => {
     possiblyFeeFunctions,
     // fees,
     uniqueSignatures,
+    checksum,
+    unknownFunctions
   };
 
   serverLog(`${id} decompiled.`);
